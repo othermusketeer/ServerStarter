@@ -22,6 +22,8 @@ class Basic(object):
     SSHPort = 22
     UPSTREAMDNS = "x.x.x.x"
     COLORIZE = False
+    LOCALE = "en_US.UTF-8"
+    TIMEZONE = "EST"
     
     showWarn = True
     showInfo = True
@@ -34,7 +36,9 @@ class Basic(object):
                     'version' : '/etc/debian_version',
                     'xinet.d/' : '/etc/xinet.d/',
                     'up.rules' : '/etc/iptables.up.rules',
-                    'iptables' : '/etc/network/if-pre-up.d/iptables'
+                    'iptables' : '/etc/network/if-pre-up.d/iptables',
+                    'zoneinfo/': '/usr/share/zoneinfo/',
+                    'localtime': '/etc/localtime'
                  }
     
     Apt = None
@@ -53,7 +57,7 @@ class Basic(object):
         self.COLORIZE = colorize
         self.Apt = myaptclass()
         
-    def fixLocale(self):
+    def fixLocale(self,mylocale=None):
         '''
         check_install multipath-tools multipath-tools
         export LANGUAGE=en_US.UTF-8
@@ -64,10 +68,29 @@ class Basic(object):
         locale-gen en_US.UTF-8
         dpkg-reconfigure locales
         '''
+        # TODO: Decide if multipath-tools is needed
+        if mylocale is None:
+            mylocale = self.LOCALE
+            
+        os.system('export LANGUAGE='+mylocale)
+        os.system('export LANG='+mylocale)
+        os.system('export LC_ALL='+mylocale)
+        os.system('locale-gen '+mylocale)
         
+        # TODO: Determin if we still need to dpkg-reconfure even if we locale-gen
         os.system('dpkg-reconfigure locales')
     
-    def fixTimeZone(self):
+    def fixTimeZone(self,mytimezone=None):
+        # TODO: Determine if time zone can be programmatically set
+        
+        # TODO: Handle Basic.TIMEZONE
+        
+        if mytimezone is not None:
+            # ln -sf /usr/share/zoneinfo/EST /etc/localtime ## for Eastern Standard Time
+            if os.path.lexists(os.path.normpath( os.path.join(self.FILEPATH['zoneinfo/'],mytimezone) )):
+                os.system('ln -sf '+os.path.normpath( os.path.join(self.FILEPATH['zoneinfo/'],mytimezone) )+' '+self.FILEPATH['localtime'])
+                return
+            
         os.system('dpkg-reconfigure tzdata')
 
     def dbg(self,outtext):
