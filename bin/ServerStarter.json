@@ -1,0 +1,31 @@
+{
+	"basic": {
+		"sshport": 1234,
+		"host": "testbox",
+		"domain": "home.othermusketeer.com",
+		"ip": "?",
+		"dns": ["192.168.1.115", "?"],
+		"colorize": false,
+		"locale": "en_US.UTF-8",
+		"timezone": "EST",
+		"debug": true,
+		"showWarn": true,
+		"showInfo": true,
+		"showError": true,
+		"filepath": {
+			"hosts": "/etc/hosts" ,
+			"resolv.conf": "/etc/resolv.conf",
+			"hostname": "/etc/hostname",
+			"init_gen_host_keys": "/etc/init.d/ssh_gen_host_keys",
+			"version": "/etc/debian_version",
+			"xinet.d/": "/etc/xinet.d/",
+			"up.rules": "/etc/iptables.up.rules",
+			"iptables": "/etc/network/if-pre-up.d/iptables",
+			"zoneinfo/": "/usr/share/zoneinfo/",
+			"localtime": "/etc/localtime"
+		}
+	},
+	"3rdpartymod": {
+		"option1": 5
+	}
+}

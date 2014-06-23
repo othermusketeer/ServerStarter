@@ -34,7 +34,8 @@ PROFILE = 0
 
 
 def basicSetup():
-    exampleSetup = basic.Basic(sshport=1345,colorize=False)
+    global DEBUG
+    exampleSetup = basic.Basic(sshport=1345,colorize=False,DEBUG=DEBUG)
     
     exampleSetup.fixLocale('en_US.UTF-8')
     exampleSetup.fixTimeZone()

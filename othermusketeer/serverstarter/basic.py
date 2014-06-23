@@ -4,11 +4,12 @@ Created on Jun 18, 2014
 @author: d
 
 Influenced by:
-    https://GetHub.comXeoncross/lowendscript/setup-debian.sh
+    https://GetHub.com/Xeoncross/lowendscript/setup-debian.sh
 '''
 
 import os.path
 import sys
+import simplejson as json
 
 from othermusketeer.serverstarter import myaptclass
 
@@ -22,6 +23,7 @@ class Basic(object):
     SSHPort = 22
     UPSTREAMDNS = "x.x.x.x"
     COLORIZE = False
+    DEBUG = False
     LOCALE = "en_US.UTF-8"
     TIMEZONE = "EST"
     
@@ -40,45 +42,65 @@ class Basic(object):
                     'zoneinfo/': '/usr/share/zoneinfo/',
                     'localtime': '/etc/localtime'
                  }
-    
     Apt = None
     
-    def __init__(self,host=None,domain=None,sshport=None,colorize=False):
+    def __init__(self,host=None,domain=None,sshport=None,colorize=False,DEBUG=False):
         '''
         Basic script operations
         '''
+        #global DEBUG
+        self.DEBUG = DEBUG
+        
         if host is not None:
             self.HOST = host.split('.')[0]
         if domain is not None:
             self.DOMAIN = domain.rstrip('.').lstrip('.')
-        if (sshport is not None) and (sshport.isdigit()):
+            
+        # TODO: make sure sshport is numberic
+        if (sshport is not None):
             self.SSHPort = sshport
         
         self.COLORIZE = colorize
-        self.Apt = myaptclass()
+        self.Apt = myaptclass.myaptclass(DEBUG=DEBUG)
+    
+    def loadConfigFile(self,filename=None):
+        #try:
+            tmpstr=open(filename,'r').read()
+        #except:
+            self.print_warn('Error occured while reading config file!')
+        #    return False
+            self.loadConfigString(tmpstr)
+    
+    def loadConfigString(self,definition=None):
+        """
+        :param definition: string with JSON formated configuration
+        
+        """
+        self.configdata = json.loads(definition)
+        if self.DEBUG:
+            self.print_debug('json is type %s ' % self.configdata)
+                
+    def dorun(self,cmd,fake_return=True):
+        if self.DEBUG:
+            self.print_debug('[Basic]<CMD> '+cmd)
+            return fake_return
+        else:
+            return os.system(cmd)
         
     def fixLocale(self,mylocale=None):
-        '''
-        check_install multipath-tools multipath-tools
-        export LANGUAGE=en_US.UTF-8
-        export LANG=en_US.UTF-8
-        export LC_ALL=en_US.UTF-8
-    
-        # Generate locale
-        locale-gen en_US.UTF-8
-        dpkg-reconfigure locales
+        ''' Adjust the servers locale settings
         '''
         # TODO: Decide if multipath-tools is needed
         if mylocale is None:
             mylocale = self.LOCALE
             
-        os.system('export LANGUAGE='+mylocale)
-        os.system('export LANG='+mylocale)
-        os.system('export LC_ALL='+mylocale)
-        os.system('locale-gen '+mylocale)
+        self.dorun('export LANGUAGE='+mylocale)
+        self.dorun('export LANG='+mylocale)
+        self.dorun('export LC_ALL='+mylocale)
+        self.dorun('locale-gen '+mylocale)
         
         # TODO: Determin if we still need to dpkg-reconfure even if we locale-gen
-        os.system('dpkg-reconfigure locales')
+        self.dorun('dpkg-reconfigure locales')
     
     def fixTimeZone(self,mytimezone=None):
         # TODO: Determine if time zone can be programmatically set
@@ -88,34 +110,26 @@ class Basic(object):
         if mytimezone is not None:
             # ln -sf /usr/share/zoneinfo/EST /etc/localtime ## for Eastern Standard Time
             if os.path.lexists(os.path.normpath( os.path.join(self.FILEPATH['zoneinfo/'],mytimezone) )):
-                os.system('ln -sf '+os.path.normpath( os.path.join(self.FILEPATH['zoneinfo/'],mytimezone) )+' '+self.FILEPATH['localtime'])
+                self.dorun('ln -sf '+os.path.normpath( os.path.join(self.FILEPATH['zoneinfo/'],mytimezone) )+' '+self.FILEPATH['localtime'])
                 return
             
-        os.system('dpkg-reconfigure tzdata')
-
-    def dbg(self,outtext):
-        global DEBUG
-        if DEBUG:
-            return True
-        else:
-            return False
+        self.dorun('dpkg-reconfigure tzdata')
         
     def print_debug(self,outtext):
-        global DEBUG
-        if DEBUG:
-            sys.stderr.write(outtext)
+        if self.DEBUG:
+            sys.stderr.write('DEBUG: '+outtext+'\n')
             
     def print_info(self,outtext):
         if self.showInfo:
-            sys.stdout.write(outtext)
+            sys.stdout.write(outtext+'\n')
     
     def print_warn(self,outtext):
         if self.showWarn:
-            sys.stderr.write(outtext)
+            sys.stderr.write(outtext+'\n')
 
     def print_error(self,outtext):
         if self.showError:
-            sys.stderr.write(outtext)
+            sys.stderr.write(outtext+'\n')
             
     def check_sanity(self):
         # check root
@@ -138,7 +152,7 @@ class Basic(object):
         if displayname is None:
             displayname = checkfile
             
-        res = os.system('which "'+checkfile+'" 2>/dev/null')
+        res = self.dorun('which "'+checkfile+'" 2>/dev/null')
         douninstall = False
         if res == 0:
             douninstall = True
@@ -156,7 +170,7 @@ class Basic(object):
         if displayname is None:
             displayname = checkfile
             
-        res = os.system('which "'+checkfile+'" 2>/dev/null')
+        res = self.dorun('which "'+checkfile+'" 2>/dev/null')
         doinstall = False
         if res == 0:
             self.print_warn(displayname+" is already installed.")
